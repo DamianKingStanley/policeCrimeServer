@@ -7,14 +7,14 @@ const userSchema = mongoose.Schema(
     email: { type: String, required: true },
     password: { type: String, required: true },
     phoneNumber: { type: String },
-    location: { type: String },
+    role: { type: String, enum: ["admin", "officer"], required: true },
     profilePicture: { type: String },
-    followers: { type: Number, default: 0 },
-    following: { type: Number, default: 0 },
+    resetToken: { type: String },
+    resetTokenExpires: { type: Date },
   },
   {
     timestamps: true,
   }
 );
 
-export default mongoose.model("user", userSchema);
+export default mongoose.model("User", userSchema);

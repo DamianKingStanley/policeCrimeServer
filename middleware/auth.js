@@ -1,35 +1,25 @@
 import jwt from "jsonwebtoken";
-import decode from "jwt-decode";
-import dotenv from "dotenv";
+import User from "../models/user.js";
 
-dotenv.config();
-const secret = process.env.JWT_SECRET;
+const auth = (roles) => async (req, res, next) => {
+  const token = req.headers.authorization?.split(" ")[1];
 
-const auth = async (req, res, next) => {
+  if (!token) {
+    return res.status(401).json({ message: "No token provided" });
+  }
+
   try {
-    const token = req.headers.authorization?.split(" ")[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
 
-    if (!token) {
-      return res.status(401).json({ error: "Not authenticated" });
+    const user = await User.findById(decoded.id);
+    if (!user || !roles.includes(user.role)) {
+      return res.status(403).json({ message: "Access denied" });
     }
 
-    const decodeToken = decode(token);
-
-    if (decodeToken.exp * 1000 < Date.now()) {
-      return res.status(401).json({ error: "Token has expired" });
-    }
-
-    jwt.verify(token, secret, (err, decoded) => {
-      if (err) {
-        return res.status(401).json({ error: "Invalid token" });
-      }
-
-      req.userId = decoded?._id;
-      next();
-    });
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json({ error: error.message });
+    next();
+  } catch (err) {
+    res.status(401).json({ message: "Invalid token" });
   }
 };
 
